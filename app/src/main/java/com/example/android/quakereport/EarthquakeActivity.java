@@ -40,25 +40,23 @@ public class EarthquakeActivity extends AppCompatActivity {
         setContentView(R.layout.earthquake_activity);
 
         final ListView earthquakeListView = (ListView) findViewById(R.id.list);
-        final ArrayList<Earthquake> earthquakess = new ArrayList<>();
         adapter = new EarthquakeAdapter(this, new ArrayList<Earthquake>());
-        adapter.add(new Earthquake(7.2,"88km N of Yelizovo, Russia","Jan 30,2016" ,"3:25 AM", "https://earthquake.usgs.gov/earthquakes/eventpage/us20004vvx"));
+        adapter.add(new Earthquake(7.2, "88km N of Yelizovo, Russia", "Jan 30,2016", "3:25 AM", "https://earthquake.usgs.gov/earthquakes/eventpage/us20004vvx"));
         earthquakeListView.setAdapter(adapter);
         Log.d(LOG_TAG, "EarthquakeActivity started");
-        EarthquakeAsycTask task = new EarthquakeAsycTask();
-
-        task.execute(USGS_REQUEST_URL);
 
 
         earthquakeListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Earthquake currentEarthquake = earthquakess.get(position);
+                Earthquake currentEarthquake = adapter.getItem(position);
                 Uri earthquakeUri = Uri.parse(currentEarthquake.getUrl());
                 Intent websiteIntent = new Intent(Intent.ACTION_VIEW, earthquakeUri);
                 startActivity(websiteIntent);
             }
         });
+        EarthquakeAsycTask task = new EarthquakeAsycTask();
+        task.execute(USGS_REQUEST_URL);
     }
 
     class EarthquakeAsycTask extends AsyncTask<String, Void, List<Earthquake>> {
