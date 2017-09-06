@@ -18,7 +18,6 @@ import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Locale;
 
 /**
  * Created by Yvonne on 2017/2/20.
@@ -137,8 +136,6 @@ import java.util.Locale;
                 JSONObject root = new JSONObject(jsonResponse);
                 JSONArray features = root.getJSONArray("features");
                 Date dateObject;
-                SimpleDateFormat dateFormatd = new SimpleDateFormat("MMM DD,yyyy ", Locale.ENGLISH);
-                SimpleDateFormat dateFormath = new SimpleDateFormat(" h:mm a", Locale.ENGLISH);
                 for(int i=0;i<features.length();i++){
                     JSONObject earthquake = features.getJSONObject(i);
                     JSONObject properties = earthquake.getJSONObject("properties");
@@ -147,8 +144,9 @@ import java.util.Locale;
                     String url=properties.getString("url");
                     long time=properties.getLong("time");
                     dateObject = new Date(time);
-                    String dateToDisplayd = dateFormatd.format(dateObject);
-                    String dateToDisplayh = dateFormath.format(dateObject);
+                    String dateToDisplayd = formatDate(dateObject);
+                    String dateToDisplayh = formatTime(dateObject);
+                    Log.d(LOG_TAG,"年月日"+dateToDisplayd);
 
                      earthquakes.add(new Earthquake(mag,place,dateToDisplayd,dateToDisplayh,url));
                 }
@@ -158,6 +156,18 @@ import java.util.Locale;
             }
             return earthquakes;
         }
+    private static String formatDate(Date dateObject) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("LLL dd, yyyy");
+        return dateFormat.format(dateObject);
+    }
+
+    /**
+     * Return the formatted date string (i.e. "4:30 PM") from a Date object.
+     */
+    private static String formatTime(Date dateObject) {
+        SimpleDateFormat timeFormat = new SimpleDateFormat("h:mm a");
+        return timeFormat.format(dateObject);
+    }
 
     }
 
