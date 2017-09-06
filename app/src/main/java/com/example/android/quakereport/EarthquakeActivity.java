@@ -15,35 +15,50 @@
  */
 package com.example.android.quakereport;
 
+import android.app.LoaderManager.LoaderCallbacks;
+import android.content.Context;
 import android.content.Intent;
+import android.content.Loader;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class EarthquakeActivity extends AppCompatActivity {
-    EarthquakeAdapter adapter;
+import static android.view.View.GONE;
 
+public class EarthquakeActivity extends AppCompatActivity implements LoaderCallbacks<List<Earthquake>> {
     public static final String LOG_TAG = EarthquakeActivity.class.getName();
-    private static final String USGS_REQUEST_URL = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2016-01-01&endtime=2016-01-31&minmag=6&limit=10";
+    private static final String USGS_REQUEST_URL = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2016-01-01&endtime=2016-01-31&minmag=3&limit=10";
+    private    EarthquakeAdapter adapter;
+    private   ListView earthquakeListView ;
+    private TextView emptyText;
+    private ProgressBar progressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.earthquake_activity);
 
-        final ListView earthquakeListView = (ListView) findViewById(R.id.list);
+        earthquakeListView = (ListView) findViewById(R.id.list);
+        emptyText=(TextView)findViewById(R.id.empty_text);
         adapter = new EarthquakeAdapter(this, new ArrayList<Earthquake>());
-        adapter.add(new Earthquake(7.2, "88km N of Yelizovo, Russia", "Jan 30,2016", "3:25 AM", "https://earthquake.usgs.gov/earthquakes/eventpage/us20004vvx"));
         earthquakeListView.setAdapter(adapter);
+        earthquakeListView.setEmptyView(emptyText);
+        progressBar=(ProgressBar)findViewById(R.id.loading_spinner);
         Log.d(LOG_TAG, "EarthquakeActivity started");
+        ConnectivityManager cm =
+                (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
 
 
         earthquakeListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -55,28 +70,40 @@ public class EarthquakeActivity extends AppCompatActivity {
                 startActivity(websiteIntent);
             }
         });
-        EarthquakeAsycTask task = new EarthquakeAsycTask();
-        task.execute(USGS_REQUEST_URL);
-    }
-
-    class EarthquakeAsycTask extends AsyncTask<String, Void, List<Earthquake>> {
-
-        @Override
-        protected List<Earthquake> doInBackground(String... url) {
-            ArrayList<Earthquake> earthquakes = QueryUtils.fetchEarthquakeData(url[0]);
-            Log.d(LOG_TAG, url[0]);
-            Log.d(LOG_TAG, String.valueOf(earthquakes));
-
-            return earthquakes;
+        if(activeNetwork!=null&&activeNetwork.isConnected()){
+            android.app.LoaderManager loaderManager=getLoaderManager();
+            loaderManager.initLoader(0,null,this);
+        }else {
+            progressBar.setVisibility(GONE);
+            emptyText.setText("无网络");
         }
 
-        @Override
-        protected void onPostExecute(final List<Earthquake> earthquakes) {
-//            adapter.clear();
-            if (earthquakes != null) {
-                adapter.addAll(earthquakes);
-            }
-        }
 
     }
+
+    @Override
+    public Loader<List<Earthquake>> onCreateLoader(int id, Bundle args) {
+        Log.d(LOG_TAG,"加载器创建");
+
+        return new EarthquakeLoader(getApplicationContext(),USGS_REQUEST_URL);
+    }
+
+    @Override
+    public void onLoadFinished(Loader<List<Earthquake>> loader, List<Earthquake> earthquakes) {
+        emptyText.setText("没有满足条件的地震");
+        progressBar.setVisibility(GONE);
+        Log.d(LOG_TAG,"找不到条件的地震");
+        adapter.clear();
+        if (earthquakes != null ) {
+            adapter.addAll(earthquakes);
+            Log.d(LOG_TAG,"加载器加载结束");
+        }
+    }
+
+    @Override
+    public void onLoaderReset(Loader<List<Earthquake>> loader) {
+        adapter.clear();
+        Log.d(LOG_TAG,"加载器重置");
+    }
+
 }

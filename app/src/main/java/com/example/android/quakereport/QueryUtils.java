@@ -47,6 +47,11 @@ import java.util.Locale;
         private QueryUtils() {
         }
         public static ArrayList<Earthquake> fetchEarthquakeData(String sUrl){
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
            URL url=creatUrl(sUrl);
             String jsonresponse="";
             try {
